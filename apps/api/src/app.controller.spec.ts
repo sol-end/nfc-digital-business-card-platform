@@ -14,9 +14,19 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('getHealth', () => {
+    it('should return a healthy API response', () => {
+      const result = appController.getHealth();
+
+      expect(result.status).toBe('ok');
+      expect(result.service).toBe('nfc-business-card-api');
+      expect(result.timestamp).toBeDefined();
+    });
+
+    it('should return a valid ISO timestamp', () => {
+      const result = appController.getHealth();
+
+      expect(new Date(result.timestamp).toISOString()).toBe(result.timestamp);
     });
   });
 });

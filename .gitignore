@@ -27,3 +27,5 @@ npm-debug.log*
 # Test and tooling caches
 .nyc_output/
 .eslintcache
+# TypeScript build metadata
+*.tsbuildinfo

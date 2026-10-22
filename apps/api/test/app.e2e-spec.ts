@@ -16,11 +16,17 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
+  it('/health (GET)', () => {
     return request(app.getHttpServer())
-      .get('/')
+      .get('/health')
       .expect(200)
-      .expect('Hello World!');
+      .expect((response) => {
+        expect(response.body.status).toBe('ok');
+        expect(response.body.service).toBe('nfc-business-card-api');
+        expect(new Date(response.body.timestamp).toISOString()).toBe(
+          response.body.timestamp,
+        );
+      });
   });
 
   afterEach(async () => {
