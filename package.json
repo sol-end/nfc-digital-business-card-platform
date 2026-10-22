@@ -1,0 +1,22 @@
+{
+  "name": "nfc-digital-business-card-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev --workspace=web",
+    "dev:api": "npm run start:dev --workspace=api",
+    "build": "npm run build:web && npm run build:api",
+    "build:web": "npm run build --workspace=web",
+    "build:api": "npm run build --workspace=api",
+    "lint": "npm run lint:web && npm run lint:api",
+    "lint:web": "npm run lint --workspace=web",
+    "lint:api": "npm run lint --workspace=api",
+    "test": "npm run test:api",
+    "test:api": "npm run test --workspace=api"
+  }
+}
