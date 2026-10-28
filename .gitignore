@@ -29,3 +29,5 @@ npm-debug.log*
 .eslintcache
 # TypeScript build metadata
 *.tsbuildinfo
+# Generated Prisma client
+/apps/api/src/generated/prisma/

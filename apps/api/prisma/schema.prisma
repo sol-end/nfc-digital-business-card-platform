@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  CONVERTED
+  LOST
+}
+
+enum LeadSource {
+  NFC
+  QR
+  DIRECT
+}
+
+enum AnalyticsEventType {
+  PROFILE_VIEW
+  EMAIL_CLICK
+  PHONE_CLICK
+  WEBSITE_CLICK
+  SOCIAL_CLICK
+  LEAD_CREATED
+}
+
+model User {
+  id           String         @id @default(uuid()) @db.Uuid
+  email        String         @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  cards        BusinessCard[]
+}
+
+model BusinessCard {
+  id          String           @id @default(uuid()) @db.Uuid
+  ownerId     String           @db.Uuid
+  slug        String           @unique
+  fullName    String
+  jobTitle    String?
+  company     String?
+  bio         String?
+  email       String?
+  phone       String?
+  website     String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  owner       User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  leads       Lead[]
+  events      AnalyticsEvent[]
+
+  @@index([ownerId])
+}
+
+model Lead {
+  id           String      @id @default(uuid()) @db.Uuid
+  cardId       String      @db.Uuid
+  name         String
+  email        String?
+  phone        String?
+  message      String?
+  status       LeadStatus  @default(NEW)
+  source       LeadSource  @default(DIRECT)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  card         BusinessCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+  @@index([status])
+}
+
+model AnalyticsEvent {
+  id        String             @id @default(uuid()) @db.Uuid
+  cardId    String             @db.Uuid
+  eventType AnalyticsEventType
+  source    LeadSource         @default(DIRECT)
+  metadata  Json?
+  createdAt DateTime           @default(now())
+
+  card      BusinessCard       @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+  @@index([eventType, createdAt])
+}
