@@ -5,7 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service.js';
-import { Prisma } from '../generated/prisma/client.js';
+import {
+  Prisma,
+  AnalyticsEventType,
+  LeadSource,
+} from '../generated/prisma/client.js';
 
 export type CardInput = {
   slug: string;
@@ -97,7 +101,7 @@ export class CardsService {
     return { success: true };
   }
 
-  async findPublic(slug: string) {
+  async findPublic(slug: string, source?: string) {
     const card = await this.prisma.businessCard.findFirst({
       where: { slug, isActive: true },
       select: {
@@ -109,13 +113,93 @@ export class CardsService {
         email: true,
         phone: true,
         website: true,
+        id: true,
       },
     });
 
     if (!card) {
       throw new NotFoundException('Card not found');
-    }
+     }
+    const eventSource =
+     source === 'nfc'
+     ? LeadSource.NFC
+     : source === 'qr'
+      ? LeadSource.QR
+      : LeadSource.DIRECT;
 
+     try {
+     await this.prisma.analyticsEvent.create({
+     data: {
+      cardId: card.id,
+      eventType: AnalyticsEventType.PROFILE_VIEW,
+      source: eventSource,
+     },
+     });
+     } catch {
+     // Analytics must never prevent a public card from loading.
+     }
+
+    const { id, ...publicCard } = card;
+     return publicCard;
     return card;
+    }
+  async analytics(ownerId: string) {
+  const cards = await this.prisma.businessCard.findMany({
+    where: { ownerId },
+    select: { id: true, slug: true, fullName: true },
+  });
+
+  if (cards.length === 0) {
+    return {
+      totalProfileViews: 0,
+      totalLeads: 0,
+      cards: [],
+    };
   }
+
+  const cardIds = cards.map((card) => card.id);
+
+  const [views, leads] = await Promise.all([
+    this.prisma.analyticsEvent.groupBy({
+      by: ['cardId'],
+      where: {
+        cardId: { in: cardIds },
+        eventType: AnalyticsEventType.PROFILE_VIEW,
+      },
+      _count: { _all: true },
+    }),
+    this.prisma.lead.groupBy({
+      by: ['cardId'],
+      where: { cardId: { in: cardIds } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const viewCounts = new Map(
+    views.map((item) => [item.cardId, item._count._all]),
+  );
+
+  const leadCounts = new Map(
+    leads.map((item) => [item.cardId, item._count._all]),
+  );
+
+  const results = cards.map((card) => ({
+    slug: card.slug,
+    fullName: card.fullName,
+    profileViews: viewCounts.get(card.id) ?? 0,
+    leads: leadCounts.get(card.id) ?? 0,
+  }));
+
+  return {
+    totalProfileViews: results.reduce(
+      (sum, card) => sum + card.profileViews,
+      0,
+    ),
+    totalLeads: results.reduce(
+      (sum, card) => sum + card.leads,
+      0,
+    ),
+    cards: results,
+  };
+}
 }

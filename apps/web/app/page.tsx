@@ -1,69 +1,166 @@
-import Image from "next/image";
+
+'use client';
+
+import { FormEvent, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function Home() {
+  const router = useRouter();
+  const [mode, setMode] = useState<'login' | 'register'>('register');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: mode,
+          name,
+          email,
+          password,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(
+          Array.isArray(result.message)
+            ? result.message.join(', ')
+            : result.message ?? 'Authentication failed',
+        );
+        return;
+      }
+
+      router.push('/dashboard');
+      router.refresh();
+    } catch {
+      setError('Unable to connect to the server.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="mx-auto max-w-5xl px-6 py-16">
+        <header className="mb-20 flex items-center justify-between">
+          <span className="text-2xl font-bold tracking-tight">
+            NFC<span className="text-cyan-400">Connect</span>
+          </span>
+          <Link href="/dashboard" className="text-sm text-slate-300">
+            Dashboard
+          </Link>
+        </header>
+
+        <div className="grid gap-16 md:grid-cols-2 md:items-center">
+          <section>
+            <p className="mb-4 font-semibold text-cyan-400">
+              The modern way to connect
+            </p>
+            <h1 className="text-5xl font-bold leading-tight tracking-tight">
+              Your business card.
+              <span className="block text-cyan-400">
+                Reimagined.
+              </span>
+            </h1>
+            <p className="mt-6 text-lg leading-relaxed text-slate-300">
+              Share your professional identity instantly.
+              Turn connections into opportunities with a
+              digital business card, QR code, and lead capture.
+            </p>
+          </section>
+
+          <section className="rounded-3xl border border-slate-800 bg-slate-900 p-8 shadow-2xl">
+            <h2 className="text-2xl font-bold">
+              {mode === 'register'
+                ? 'Create your account'
+                : 'Welcome back'}
+            </h2>
+            <p className="mt-2 text-sm text-slate-400">
+              {mode === 'register'
+                ? 'Start building your digital identity.'
+                : 'Sign in to manage your cards.'}
+            </p>
+
+            <form onSubmit={submit} className="mt-8 space-y-4">
+              {mode === 'register' && (
+                <label className="block text-sm">
+                  Full name
+                  <input
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3"
+                  />
+                </label>
+              )}
+
+              <label className="block text-sm">
+                Email address
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3"
+                />
+              </label>
+
+              <label className="block text-sm">
+                Password
+                <input
+                  type="password"
+                  minLength={mode === 'register' ? 12 : undefined}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3"
+                />
+              </label>
+
+              {error && (
+                <p role="alert" className="text-sm text-red-400">
+                  {error}
+                </p>
+              )}
+
+              <button
+                disabled={loading}
+                className="w-full rounded-xl bg-cyan-400 px-5 py-3 font-bold text-slate-950 disabled:opacity-50"
+              >
+                {loading
+                  ? 'Please wait...'
+                  : mode === 'register'
+                    ? 'Create account'
+                    : 'Sign in'}
+              </button>
+            </form>
+
+            <button
+              onClick={() => {
+                setMode(mode === 'register' ? 'login' : 'register');
+                setError('');
+              }}
+              className="mt-6 text-sm text-cyan-400"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              {mode === 'register'
+                ? 'Already have an account? Sign in'
+                : 'New here? Create an account'}
+            </button>
+          </section>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

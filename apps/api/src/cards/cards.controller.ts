@@ -10,6 +10,7 @@ import {
   Req,
   UseGuards,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import {
   IsBoolean,
@@ -85,8 +86,9 @@ export class CardsController {
   constructor(private readonly cards: CardsService) {}
 
   @Get('public/:slug')
-  getPublic(@Param('slug') slug: string) {
-    return this.cards.findPublic(slug);
+  getPublic(@Param('slug') slug: string,
+    @Query('source') source?: string,) {
+    return this.cards.findPublic(slug, source);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -105,6 +107,10 @@ export class CardsController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get('analytics')
+  analytics(@Req() req: AuthRequest) {return this.cards.analytics(req.userId);
+  
+   } 
   @Get(':id')
   getOne(
     @Req() req: AuthRequest,

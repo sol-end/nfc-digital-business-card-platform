@@ -1,4 +1,3 @@
-
 import {
   Body,
   Controller,
@@ -8,6 +7,7 @@ import {
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   IsEmail,
   IsString,
@@ -51,11 +51,13 @@ const validate = new ValidationPipe({
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   @Post('register')
   register(@Body(validate) dto: RegisterDto) {
     return this.auth.register(dto.email, dto.password, dto.name);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('login')
   login(@Body(validate) dto: LoginDto) {
     return this.auth.login(dto.email, dto.password);
