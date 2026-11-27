@@ -24,7 +24,7 @@ export type CardInput = {
 };
 
 @Injectable()
-export class CardsService {
+export class CardsService { 
   constructor(private readonly prisma: PrismaService) {}
 
   private async handleUnique<T>(operation: () => Promise<T>): Promise<T> {
@@ -100,8 +100,8 @@ export class CardsService {
 
     return { success: true };
   }
-
-  async findPublic(slug: string, source?: string) {
+ 
+  async findPublic(slug: string, source?: string, viewerId?: string,) {
     const card = await this.prisma.businessCard.findFirst({
       where: { slug, isActive: true },
       select: {
@@ -114,6 +114,7 @@ export class CardsService {
         phone: true,
         website: true,
         id: true,
+        ownerId: true,
       },
     });
 
@@ -126,23 +127,24 @@ export class CardsService {
      : source === 'qr'
       ? LeadSource.QR
       : LeadSource.DIRECT;
-
-     try {
-     await this.prisma.analyticsEvent.create({
-     data: {
-      cardId: card.id,
-      eventType: AnalyticsEventType.PROFILE_VIEW,
-      source: eventSource,
-     },
-     });
-     } catch {
-     // Analytics must never prevent a public card from loading.
-     }
-
-    const { id, ...publicCard } = card;
-     return publicCard;
-    return card;
+     
+    if (viewerId !== card.ownerId) {
+      try {
+        await this.prisma.analyticsEvent.create({
+          data: {
+            cardId: card.id,
+            eventType: AnalyticsEventType.PROFILE_VIEW,
+            source: eventSource,
+          },
+        });
+      } catch {
+        // Analytics must never prevent a public card from loading.
+      }
     }
+
+    const { id, ownerId, ...publicCard } = card;
+    return publicCard;  
+  } 
   async analytics(ownerId: string) {
   const cards = await this.prisma.businessCard.findMany({
     where: { ownerId },
