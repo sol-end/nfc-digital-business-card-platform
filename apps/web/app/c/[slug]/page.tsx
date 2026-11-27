@@ -97,7 +97,7 @@ export default async function PublicCardPage({
           </div>
 
           <CardActions card={card} />
-          <LeadForm slug={slug} source={source} />
+          <LeadForm slug={slug} source={source} fullName={card.fullName} />
         </div>
       </article>
     </main>

@@ -33,6 +33,28 @@ type Analytics = {
 function validateField(field: FormField, value: string): string | undefined {
   const trimmed = value.trim();
 
+  const requiredFields: FormField[] = [
+    'slug',
+    'fullName',
+    'email',
+    'website',
+  ];
+
+  if (requiredFields.includes(field) && !trimmed) {
+    const labels: Record<FormField, string> = {
+      slug: 'Public URL slug',
+      fullName: 'Full name',
+      jobTitle: 'Job title',
+      company: 'Company',
+      bio: 'Bio',
+      email: 'Email address',
+      phone: 'Phone number',
+      website: 'Website',
+    };
+
+    return `${labels[field]} is required.`;
+  }
+
   if (field === 'slug') {
     if (!trimmed) return 'Slug is required.';
     if (trimmed.length > 80) return 'Slug must be 80 characters or fewer.';
@@ -54,14 +76,10 @@ function validateField(field: FormField, value: string): string | undefined {
 
   if (field === 'website' && trimmed) {
     try {
-      const url = new URL(
-        /^[a-zA-Z][a-zA-Z\d+.-]*:/.test(trimmed)
-          ? trimmed
-          : `https://${trimmed}`,
-      );
+      const url = new URL(trimmed);
 
-      if (!url.hostname.includes('.')) {
-        return 'Enter a valid website address.';
+      if (url.protocol !== 'https:' || !url.hostname.includes('.')) {
+        return 'Enter a valid HTTPS website address, starting with https://.';
       }
     } catch {
       return 'Enter a valid website address.';
@@ -297,7 +315,12 @@ export default function Dashboard() {
     website: 'Website',
   };
 
-  const requiredFields: FormField[] = ['slug', 'fullName'];
+  const requiredFields: FormField[] = [
+    'slug',
+    'fullName',
+    'email',
+    'website',
+  ];
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">

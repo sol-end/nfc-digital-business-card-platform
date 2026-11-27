@@ -1,4 +1,3 @@
-
 'use client';
 
 import { FormEvent, useState } from 'react';
@@ -8,6 +7,7 @@ type LeadSource = 'NFC' | 'QR' | 'DIRECT';
 type Props = {
   slug: string;
   source: LeadSource;
+  fullName: string;
 };
 
 const initialForm = {
@@ -18,7 +18,7 @@ const initialForm = {
   websiteConfirm: '',
 };
 
-export default function LeadForm({ slug, source }: Props) {
+export default function LeadForm({ slug, source, fullName }: Props) {
   const [form, setForm] = useState(initialForm);
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -30,15 +30,13 @@ export default function LeadForm({ slug, source }: Props) {
     setMessage('');
     setSuccess(false);
 
-    // Require at least one contact method.
-    if (!form.email.trim() && !form.phone.trim()) {
-      setMessage('Please provide an email address or phone number.');
+    if (!form.name.trim()) {
+      setMessage('Please enter your name.');
       return;
     }
 
-    // Prevent whitespace-only names.
-    if (!form.name.trim()) {
-      setMessage('Please enter your name.');
+    if (!form.email.trim() && !form.phone.trim()) {
+      setMessage('Please provide an email address or phone number.');
       return;
     }
 
@@ -75,14 +73,16 @@ export default function LeadForm({ slug, source }: Props) {
         setMessage(
           Array.isArray(result.message)
             ? result.message.join(', ')
-            : result.message ?? 'Unable to send your message.',
+            : result.message ?? 'Unable to send your inquiry.',
         );
         return;
       }
 
       setForm(initialForm);
       setSuccess(true);
-      setMessage('Your details have been sent successfully.');
+      setMessage(
+        `Thank you! Your inquiry has been sent to ${fullName}.`,
+      );
     } catch {
       setMessage('Unable to connect. Please try again.');
     } finally {
@@ -92,14 +92,19 @@ export default function LeadForm({ slug, source }: Props) {
 
   return (
     <section className="mt-10 border-t border-slate-700 pt-8">
-      <h2 className="text-2xl font-bold">Get in touch</h2>
+      <h2 className="text-2xl font-bold">
+        Send an inquiry to {fullName}
+      </h2>
 
-      <p className="mt-2 text-sm text-slate-400">
-        Leave your contact details and a message.
+      <p className="mt-2 text-sm leading-relaxed text-slate-400">
+        Interested in connecting with {fullName}? Use this form to
+        introduce yourself and send a message. Your inquiry and
+        contact details will be delivered to the card owner through
+        their Leads dashboard.
       </p>
 
       <form onSubmit={submit} className="mt-6 space-y-4">
-        {/* Honeypot field: hidden from real visitors, useful for detecting basic bots. */}
+        {/* Hidden honeypot field to help detect basic automated spam. */}
         <div
           aria-hidden="true"
           className="absolute -left-[9999px] h-px w-px overflow-hidden"
@@ -125,7 +130,7 @@ export default function LeadForm({ slug, source }: Props) {
         </div>
 
         <label className="block text-sm">
-          Your name
+          Your name <span className="text-red-400">*</span>
 
           <input
             required
@@ -138,11 +143,12 @@ export default function LeadForm({ slug, source }: Props) {
               })
             }
             className="mt-2 w-full rounded-lg bg-slate-800 p-3 text-white"
+            placeholder="Enter your name"
           />
         </label>
 
         <label className="block text-sm">
-          Email address
+          Your email address
 
           <input
             type="email"
@@ -155,11 +161,12 @@ export default function LeadForm({ slug, source }: Props) {
               })
             }
             className="mt-2 w-full rounded-lg bg-slate-800 p-3 text-white"
+            placeholder="you@example.com"
           />
         </label>
 
         <label className="block text-sm">
-          Phone number
+          Your phone number
 
           <input
             type="tel"
@@ -172,15 +179,16 @@ export default function LeadForm({ slug, source }: Props) {
               })
             }
             className="mt-2 w-full rounded-lg bg-slate-800 p-3 text-white"
+            placeholder="Your phone number"
           />
         </label>
 
         <p className="text-xs text-slate-400">
-          Please provide at least an email address or phone number.
+          Please provide at least one contact method: email or phone.
         </p>
 
         <label className="block text-sm">
-          Message
+          Your message
 
           <textarea
             maxLength={2000}
@@ -193,6 +201,7 @@ export default function LeadForm({ slug, source }: Props) {
               })
             }
             className="mt-2 w-full rounded-lg bg-slate-800 p-3 text-white"
+            placeholder={`Write a message to ${fullName}...`}
           />
         </label>
 
@@ -201,7 +210,7 @@ export default function LeadForm({ slug, source }: Props) {
           disabled={submitting}
           className="w-full rounded-xl bg-cyan-400 p-3 font-bold text-slate-950 disabled:opacity-50"
         >
-          {submitting ? 'Sending...' : 'Send message'}
+          {submitting ? 'Sending...' : 'Send inquiry'}
         </button>
 
         {message && (

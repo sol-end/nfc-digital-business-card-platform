@@ -53,18 +53,20 @@ class CreateCardDto {
   @MaxLength(2000)
   bio?: string;
 
-  @IsOptional()
+  @IsString()
+  @MinLength(1)
   @IsEmail()
-  email?: string;
+  email!: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(40)
   phone?: string;
 
-  @IsOptional()
+  @IsString()
+  @MinLength(1)
   @IsUrl({ require_protocol: true, protocols: ['https'] })
-  website?: string;
+  website!: string;
 
   @IsOptional()
   @IsBoolean()
